@@ -8,21 +8,23 @@ Date: 15-05-2023
 import socket
 from threading import Thread
 
-from utils import can_use_raw_sockets, check_is_subnet, get_my_ip, get_default_gateway, get_my_subnet
+from .utils import can_use_raw_sockets, check_is_ip_range, get_my_ip, get_default_gateway, get_my_subnets, \
+    get_router_subnet, SUBNET
 
-MAC, NAME, VENDOR, PORTS, STATE, SUBNET, GATEWAY = 'mac', 'name', 'vendor', 'ports', 'state', 'subnet', 'gateway'
+MAC, NAME, VENDOR, PORTS, STATE, SUBNET, GATEWAY = 'mac', 'name', 'vendor', 'ports', 'state', SUBNET, 'gateway'
 # Frozen dictionary to use as a template for the database
 BASE_DICT = {MAC: None, NAME: None, VENDOR: None, PORTS: None, STATE: None, SUBNET: None, GATEWAY: None}
 
 
 class NetRadar:
-    def __init__(self, subnet: str = None, max_threads: int = 25):
+    def __init__(self, ip_range: str = None, max_threads: int = 25):
 
         # Auto-detect the subnet if necessary
-        self.device_subnet = get_my_subnet()
-        self.subnet = self.device_subnet if subnet is None else subnet
-        assert subnet is None, f"Invalid subnet: {subnet}{'. Could not detect device subnet' if subnet == self.device_subnet else ''}"
-        assert check_is_subnet(self.subnet), f"Invalid subnet: {subnet}. Must be in CIDR notation."
+        self.device_subnets_info = get_my_subnets()
+        self.router_subnet_info = get_router_subnet()
+        self.subnet = self.router_subnet_info[SUBNET] if ip_range is None else ip_range
+        assert ip_range is None, f"Invalid ip range: {ip_range}{'. Could not detect device subnet' if ip_range == self.router_subnet_info else ''}"
+        assert check_is_ip_range(self.subnet), f"Invalid subnet: {ip_range}. Must be in CIDR notation."
 
         self.device_ip = get_my_ip()
         self._gateway = get_default_gateway()
@@ -145,3 +147,17 @@ class NetRadar:
         """
         self.scan()
         return self.devices
+
+    def __str__(self):
+        def pretty_dict(d: dict, indent=0) -> str:
+            """Returns a string representation of a dictionary with custom formatting."""
+            lines = []
+            for key, value in d.items():
+                lines.append('\t' * indent + f'{key}: {value}')
+            return '\n'.join(lines)
+
+        return f"My Device Info:\n" \
+               f"{pretty_dict(self.get_device_info(ip=self.device_ip), indent=1)}\n" \
+               f"Router subnet:\n" \
+               f"{pretty_dict(self.router_subnet_info, indent=1)}\n"
+

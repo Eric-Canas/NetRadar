@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='netradar',
-    version='0.1',  # start with a smaller version number
+    version='0.2',  # start with a smaller version number
     author='Eric-Canas',
     author_email='eric@ericcanas.com',
     url='https://github.com/Eric-Canas/NetRadar',  # update with your repository URL
